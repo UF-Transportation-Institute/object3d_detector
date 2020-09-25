@@ -35,6 +35,7 @@ typedef struct feature {
 
 static const int FEATURE_SIZE = 61;
 
+///Detector class
 class Object3dDetector {
 private:
     /*** Publishers and Subscribers ***/
