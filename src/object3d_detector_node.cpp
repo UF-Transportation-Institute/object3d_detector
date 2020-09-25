@@ -16,6 +16,7 @@
 // SVM
 #include "svm.h"
 
+///Features
 typedef struct feature {
     /*** for visualization ***/
     Eigen::Vector4f centroid;
