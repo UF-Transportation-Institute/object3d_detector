@@ -73,7 +73,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.02
       Style: Flat Squares
-      Topic: /velodyne_points
+      Topic: /os1_cloud_node/points
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -98,7 +98,7 @@ Visualization Manager:
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: velodyne
+    Fixed Frame: os1_sensor
     Frame Rate: 30
   Name: root
   Tools:

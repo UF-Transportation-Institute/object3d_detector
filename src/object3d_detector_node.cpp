@@ -27,14 +27,14 @@ typedef struct feature {
     float min_distance;
     Eigen::Matrix3f covariance_3d;
     Eigen::Matrix3f moment_3d;
-    // float partial_covariance_2d[9];
-    // float histogram_main_2d[98];
-    // float histogram_second_2d[45];
+    float partial_covariance_2d[9];
+    float histogram_main_2d[98];
+    float histogram_second_2d[45];
     float slice[20];
     float intensity[27];
 } Feature;
 
-static const int FEATURE_SIZE = 61;
+static const int FEATURE_SIZE = 223;
 
 ///Detector class
 class Object3dDetector {
@@ -159,6 +159,7 @@ int zone_[nested_regions_] = {2,3,3,3,3,3,3,2,3,3,3,3,3,3}; // for more details,
 void Object3dDetector::extractCluster(pcl::PointCloud<pcl::PointXYZI>::Ptr pc) {
     features_.clear();
 
+    // Removing ground plane and top surface.
     pcl::IndicesPtr pc_indices(new std::vector<int>);
     pcl::PassThrough<pcl::PointXYZI> pass;
     pass.setInputCloud(pc);
@@ -166,6 +167,7 @@ void Object3dDetector::extractCluster(pcl::PointCloud<pcl::PointXYZI>::Ptr pc) {
     pass.setFilterLimits(z_limit_min_, z_limit_max_);
     pass.filter(*pc_indices);
 
+    //Adaptive clustering
     boost::array<std::vector<int>, nested_regions_> indices_array;
     for(int i = 0; i < pc_indices->size(); i++) {
         float range = 0.0;
@@ -415,14 +417,14 @@ void Object3dDetector::extractFeature(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, F
         // f4: The normalized moment of inertia tensor.
         computeMomentOfInertiaTensorNormalized(*pc_projected, f.moment_3d);
         // Navarro et al. assume that a pedestrian is in an upright position.
-        //pcl::PointCloud<pcl::PointXYZI>::Ptr main_plane(new pcl::PointCloud<pcl::PointXYZI>), secondary_plane(new pcl::PointCloud<pcl::PointXYZI>);
-        //computeProjectedPlane(pc, pca.getEigenVectors(), 2, centroid, main_plane);
-        //computeProjectedPlane(pc, pca.getEigenVectors(), 1, centroid, secondary_plane);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr main_plane(new pcl::PointCloud<pcl::PointXYZI>), secondary_plane(new pcl::PointCloud<pcl::PointXYZI>);
+        computeProjectedPlane(pc, pca.getEigenVectors(), 2, centroid, main_plane);
+        computeProjectedPlane(pc, pca.getEigenVectors(), 1, centroid, secondary_plane);
         // f5: 2D covariance matrix in 3 zones, which are the upper half, and the left and right lower halves.
-        //compute3ZoneCovarianceMatrix(main_plane, pca.getMean(), f.partial_covariance_2d);
+        compute3ZoneCovarianceMatrix(main_plane, pca.getMean(), f.partial_covariance_2d);
         // f6 and f7
-        //computeHistogramNormalized(main_plane, 7, 14, f.histogram_main_2d);
-        //computeHistogramNormalized(secondary_plane, 5, 9, f.histogram_second_2d);
+        computeHistogramNormalized(main_plane, 7, 14, f.histogram_main_2d);
+        computeHistogramNormalized(secondary_plane, 5, 9, f.histogram_second_2d);
         // f8
         computeSlice(pc, 10, f.slice);
         // f9
@@ -445,25 +447,27 @@ void Object3dDetector::saveFeature(Feature &f, struct svm_node *x) {
     x[11].index = 12; x[11].value = f.moment_3d(1,1);
     x[12].index = 13; x[12].value = f.moment_3d(1,2);
     x[13].index = 14; x[13].value = f.moment_3d(2,2);
-    // for(int i = 0; i < 9; i++) {
-    //   x[i+14].index = i+15;
-    //   x[i+14].value = f.partial_covariance_2d[i];
-    // }
-    // for(int i = 0; i < 98; i++) {
-    // 	x[i+23].index = i+24;
-    // 	x[i+23].value = f.histogram_main_2d[i];
-    // }
-    // for(int i = 0; i < 45; i++) {
-    // 	x[i+121].index = i+122;
-    // 	x[i+121].value = f.histogram_second_2d[i];
-    // }
-    for(int i = 0; i < 20; i++) {
-        x[i+14].index = i+15;
-        x[i+14].value = f.slice[i];
+
+     for(int i = 0; i < 9; i++) {
+       x[i+14].index = i+15;
+       x[i+14].value = f.partial_covariance_2d[i];
+     }
+     for(int i = 0; i < 98; i++) {
+     	x[i+23].index = i+24;
+     	x[i+23].value = f.histogram_main_2d[i];
+     }
+     for(int i = 0; i < 45; i++) {
+     	x[i+121].index = i+122;
+     	x[i+121].value = f.histogram_second_2d[i];
+     }
+
+    for(int i = 0; i < 30; i++) {
+        x[i+166].index = i+167;
+        x[i+166].value = f.slice[i];
     }
     for(int i = 0; i < 27; i++) {
-        x[i+34].index = i+35;
-        x[i+34].value = f.intensity[i];
+        x[i+196].index = i+197;
+        x[i+196].value = f.intensity[i];
     }
     x[FEATURE_SIZE].index = -1;
 
@@ -495,16 +499,6 @@ void Object3dDetector::classify() {
             }
 
             // predict
-//            if(is_probability_model_) {
-//                double prob_estimates[svm_model_->nr_class];
-//                svm_predict_probability(svm_model_, svm_node_, prob_estimates);
-//                if(prob_estimates[0] < human_probability_)
-//                    continue;
-//            } else {
-//                if(svm_predict(svm_model_, svm_node_) != 1)
-//                    continue;
-//            }
-
             if(svm_predict(svm_model_, svm_node_) != 1)
                 continue;
         }
