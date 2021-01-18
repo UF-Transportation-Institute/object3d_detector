@@ -80,7 +80,7 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /object3d_detector/markers
+      Marker Topic: /ped_detector/markers
       Name: Detection Markers
       Namespaces:
         object3d: true

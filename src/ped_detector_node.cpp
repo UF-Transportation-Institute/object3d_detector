@@ -151,7 +151,7 @@ void Object3dDetector::pointCloudCallback(const sensor_msgs::PointCloud2::ConstP
     extractCluster(pcl_pc);
     classify(pcl_pc);
 
-    if(print_fps_)if(++frames>10){std::cerr<<"[object3d_detector]: fps = "<<float(frames)/(float(clock()-start_time)/CLOCKS_PER_SEC)<<", timestamp = "<<clock()/CLOCKS_PER_SEC<<std::endl;reset = true;}//fps
+    if(print_fps_)if(++frames>10){std::cerr<<"[ped_detector]: fps = "<<float(frames)/(float(clock()-start_time)/CLOCKS_PER_SEC)<<", timestamp = "<<clock()/CLOCKS_PER_SEC<<std::endl;reset = true;}//fps
 }
 
 const int nested_regions_ = 14;
@@ -592,7 +592,7 @@ void Object3dDetector::classify(pcl::PointCloud<pcl::PointXYZI>::Ptr pc) {
 }
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "object3d_detector");
+    ros::init(argc, argv, "ped_detector");
     Object3dDetector d;
     ros::spin();
     return 0;
