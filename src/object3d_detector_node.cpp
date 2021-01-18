@@ -75,7 +75,7 @@ public:
     void extractFeature(pcl::PointCloud<pcl::PointXYZI>::Ptr pc, Feature &f,
                         Eigen::Vector4f &min, Eigen::Vector4f &max, Eigen::Vector4f &centroid);
     void saveFeature(Feature &f, struct svm_node *x);
-    void classify();
+    void classify(pcl::PointCloud<pcl::PointXYZI>::Ptr pc);
 };
 
 Object3dDetector::Object3dDetector() {
@@ -149,7 +149,7 @@ void Object3dDetector::pointCloudCallback(const sensor_msgs::PointCloud2::ConstP
     pcl::fromROSMsg(*ros_pc2, *pcl_pc);
 
     extractCluster(pcl_pc);
-    classify();
+    classify(pcl_pc);
 
     if(print_fps_)if(++frames>10){std::cerr<<"[object3d_detector]: fps = "<<float(frames)/(float(clock()-start_time)/CLOCKS_PER_SEC)<<", timestamp = "<<clock()/CLOCKS_PER_SEC<<std::endl;reset = true;}//fps
 }
@@ -477,10 +477,13 @@ void Object3dDetector::saveFeature(Feature &f, struct svm_node *x) {
     // }
 }
 
-void Object3dDetector::classify() {
+void Object3dDetector::classify(pcl::PointCloud<pcl::PointXYZI>::Ptr pc) {
     visualization_msgs::MarkerArray marker_array;
     geometry_msgs::PoseArray pose_array;
 
+    int num_found = 0;
+    char path[300], path2[300];
+    std::string line_to = "";
     for(std::vector<Feature>::iterator it = features_.begin(); it != features_.end(); ++it) {
         if(use_svm_model_) {
             saveFeature(*it, svm_node_);
@@ -502,6 +505,18 @@ void Object3dDetector::classify() {
             if(svm_predict(svm_model_, svm_node_) != 1)
                 continue;
         }
+
+//        num_found++;
+//        if(num_found == 1) {
+//            //dump lable and the cloud
+//            sprintf(path, "/media/lightning/Samsung USB/data/LidarRosDebug/cluster%d.pcd", pc->header.seq);
+//            sprintf(path2, "/media/lightning/Samsung USB/data/LidarRosDebug/label/cluster%d.txt", pc->header.seq);
+//            pcl::io::savePCDFile(path, *pc);
+//        }
+//
+//        line_to += "pedestrian " + boost::to_string(it->centroid[0])+" "+boost::to_string(it->centroid[1])+" "+boost::to_string(it->centroid[2])+" "+
+//                  boost::to_string(it->min[0])+" "+boost::to_string(it->min[1])+" "+boost::to_string(it->min[2])+" "+
+//                  boost::to_string(it->max[0])+" "+boost::to_string(it->max[1])+" "+boost::to_string(it->max[2])+" 0 \n";
 
         visualization_msgs::Marker marker;
         marker.header.stamp = ros::Time::now();
@@ -558,6 +573,13 @@ void Object3dDetector::classify() {
         pose.orientation.w = 1;
         pose_array.poses.push_back(pose);
     }
+
+//    if(num_found > 0) {
+//        std::fstream label_file;
+//        label_file.open(path2, std::fstream::out | std::fstream::trunc);
+//        label_file << line_to;
+//        label_file.close();
+//    }
 
     if(marker_array.markers.size()) {
         marker_array_pub_.publish(marker_array);
