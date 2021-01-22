@@ -28,13 +28,13 @@
   -->
   
   <!-- FLOBOT 3D Object Detector -->
-  <node pkg="ped_detector" type="ped_detector" name="ped_detector" output="screen" respawn="false">
+  <node pkg="ped_detector" type="ped_detector_node" name="ped_detector" output="screen" respawn="false">
     <param name="model_file_name" type="string" value="$(find ped_detector)/libsvm/pedestrian.model"/>
     <param name="range_file_name" type="string" value="$(find ped_detector)/libsvm/pedestrian.range"/>
   </node>
   
   <!-- NBellotto's Bayes People Tracker -->
-  <rosparam command="load" file="$(find ped_detector)/config/ped_detector.yaml"/>
+<!--  <rosparam command="load" file="$(find ped_detector)/config/ped_detector.yaml"/>-->
 <!--  <node pkg="bayes_people_tracker" type="bayes_people_tracker" name="bayes_people_tracker" output="screen" respawn="false">-->
 <!--    <param name="target_frame" type="string" value="odom"/>-->
 <!--  </node>-->
