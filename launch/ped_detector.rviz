@@ -88,11 +88,12 @@ Visualization Manager:
       Value: true
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /people_tracker/marker_array
+      Marker Topic: /ped_counter/zones
       Name: Tracking Markers
       Namespaces:
         people_id: true
         people_trajectory: true
+        zones: true
       Queue Size: 100
       Value: true
   Enabled: true
